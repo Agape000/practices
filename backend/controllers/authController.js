@@ -7,11 +7,11 @@ exports.register = async (req, res) => {
   try {
     const { name, phone, email, password } = req.body;
     if (!name || !phone || !email || !password) {
-      res.status(409).json({ message: "all fields are required" });
+      return res.status(409).json({ message: "all fields are required" });
     }
     const userExists = await user.findOne({ email });
     if (userExists) {
-      res.status(409).json({ message: "user exists" });
+      return res.status(409).json({ message: "user exists" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const registerUser = new user({
@@ -21,28 +21,31 @@ exports.register = async (req, res) => {
       password: hashedPassword,
     });
     await registerUser.save();
-    res.status(200).json({ message: "registered succussfully!!!" });
+    return res.status(200).json({ message: "registered succussfully!!!" });
   } catch (err) {
     console.log(err);
-    res.status(500), json({ message: "server error" });
+    return res.status(500).json({ message: "server error" });
   }
 };
 
 exports.login = async (req, res) => {
   try {
     const { phone, email, password } = req.body;
-    if (!password || (!phone && !email )) {
-        res.status(409).json({ message: "email or phone and password are required" });
+    if ( (!phone && !email )||!password) {
+        return res.status(409).json({ message: "email or phone and password are required" });
       }
-    const userExists=await user.find({$or:[{email},{phone}]});
+    const userExists=await user.findOne({$or:[{email},{phone}]});
     if(!userExists){
-        res.status(409).json({message:"user not found"});
+        return res.status(409).json({message:"user not found"});
     }
 
     const  isMatch=  await bcrypt.compare(password,userExists.password);
     if(!isMatch){
-        res.status(409).json({message:"password those not match"})
+       return res.status(409).json({message:"password those not match"})
     }
-    res.status(200),json({message:"login successfully"})
-  } catch {}
+    res.status(200).json({message:"login successfully"})
+  } catch(err) {
+    console.log(err);
+    return res.status(500).json({message:"server error"})
+  }
 };
